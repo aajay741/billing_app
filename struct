@@ -1,0 +1,260 @@
+PHASE 0 – Base Setup (before any module)
+1.	Decide stack
+o	Example:
+	Backend: Node / Laravel / Django / Spring
+	Frontend: React / Vue / Blade / plain HTML
+	DB: MySQL or PostgreSQL
+2.	Create base project
+o	Setup project structure.
+o	Configure DB connection.
+o	Add basic routing.
+o	Add env config (DB, ports, etc.).
+3.	Authentication & Users
+o	User table
+o	Roles: admin, staff
+o	Login, logout, password hashing
+________________________________________
+PHASE 1 – Masters (create these first)
+Everything else depends on these.
+1.	Company Settings
+o	Company name, address, GST, phone, logo.
+o	Default invoice prefix, next invoice number.
+o	Default tax configuration (CGST/SGST/IGST).
+2.	Customer Master
+o	Fields:
+	Name
+	Phone
+	Billing address
+	Delivery address (separate field for invoice print)
+	GSTIN (optional)
+o	Basic CRUD + search.
+3.	Supplier Master
+o	Name
+o	Phone
+o	Address
+o	GSTIN
+o	CRUD + search.
+4.	Product / Item Master
+o	Item name
+o	SKU / Code
+o	Category
+o	Unit (pcs, kg, etc.)
+o	Tax % (GST)
+o	Purchase price
+o	Selling price
+o	Opening stock
+o	Status (active/inactive)
+o	CRUD + search.
+5.	Chart of Accounts (COA)
+Create base ledger heads:
+o	Asset: Cash, Bank, Stock, Debtors, Input GST
+o	Liability: Creditors, Output GST
+o	Income: Sales
+o	Expense: Purchase, Other Expenses
+Store them as rows in accounts table.
+After Phase 1 you should be able to: login, manage customers, suppliers, products, and have basic accounts list.
+________________________________________
+PHASE 2 – Inventory & Core Transactions (no POS yet)
+Step 1: Inventory Engine
+1.	Stock Movement Model
+o	Table: stock_ledger
+o	Fields: product_id, date, reference_type (purchase, sale, etc.), reference_id, qty_in, qty_out, closing_stock.
+2.	When to write stock entries
+o	On purchase invoice save → qty_in
+o	On purchase return → qty_out
+o	On sales invoice → qty_out
+o	On sales return → qty_in
+3.	Current stock
+o	Either calculate from stock_ledger sum.
+o	Or keep a current_stock field in product and update on every transaction.
+Step 2: Purchase Invoice Module
+1.	UI
+o	Select supplier.
+o	Invoice no & date (auto from settings, but editable).
+o	Line items: product, qty, rate, discount, tax%.
+o	Totals: subtotal, tax, grand total.
+2.	Backend
+o	Save header (supplier, date, total).
+o	Save line items.
+o	Update stock ledger: qty_in.
+o	Create accounting entries:
+	Dr Purchase
+	Dr Input GST
+	Cr Supplier (or Cash/Bank)
+3.	Listing & View
+o	Purchase invoice list page with filters.
+o	Detail view & print simple purchase bill.
+Step 3: Purchase Return
+1.	UI
+o	Select original purchase invoice or supplier.
+o	Items with negative quantity or return quantity.
+2.	Logic
+o	Update stock (qty_out).
+o	Accounting:
+	Dr Supplier (or Cash/Bank)
+	Cr Purchase
+	Cr Input GST (reverse)
+________________________________________
+PHASE 3 – Sales Side (standard invoice first)
+Step 1: Sales Invoice (Normal)
+1.	UI
+o	Select customer.
+o	Billing address + delivery address (from master, editable).
+o	Items: product, qty, rate, discount, tax%.
+o	Totals: same pattern as purchase.
+2.	Backend
+o	Save header + items.
+o	Update stock ledger with qty_out.
+o	Accounting:
+	Dr Customer (Debtor) or Cash/Bank
+	Cr Sales
+	Cr Output GST
+3.	Printable Invoice
+o	Template with:
+	Company details
+	Customer billing & delivery address
+	Item table
+	Tax split (CGST/SGST/IGST)
+	Total amounts (in numbers + words if you want).
+Step 2: Sales Return
+1.	UI
+o	Select original sales invoice or customer.
+2.	Logic
+o	Stock → qty_in.
+o	Accounting:
+	Dr Sales Return (or reduce Sales)
+	Dr Output GST (reverse)
+	Cr Customer (or Cash/Bank)
+________________________________________
+PHASE 4 – Payments, Receipts, Journal
+Step 1: Payment & Receipt Vouchers
+1.	UI
+o	Payment:
+	Date, Account (Cash/Bank), Payee (Supplier/Expense), Amount, Narration.
+o	Receipt:
+	Date, Account (Cash/Bank), Payer (Customer/Income), Amount, Narration.
+2.	Backend
+o	Payment:
+	Dr Supplier / Expense
+	Cr Cash/Bank
+o	Receipt:
+	Dr Cash/Bank
+	Cr Customer / Income
+3.	Link to invoices (optional first, can add later)
+o	Voucher → linked invoice IDs for outstanding tracking.
+Step 2: Journal Entry
+1.	UI
+o	Date, multiple lines:
+	Account, Dr amount, Cr amount.
+o	Total Dr must equal total Cr.
+2.	Backend
+o	Write to accounting ledger table.
+________________________________________
+PHASE 5 – Accounting Engine & Reports
+Once all voucher types are working, build reports.
+Step 1: Accounting Ledger
+1.	Ledger Table / View
+o	Store entries in account_ledger with:
+	account_id, date, voucher_type, voucher_id, debit, credit, narration.
+2.	Account-wise view
+o	Filter by account & date range.
+o	Opening balance + all transactions + closing balance.
+Step 2: Trial Balance (Internal, to support P&L & Balance Sheet)
+1.	Calculate
+o	Sum debits & credits per account.
+o	Ensure total debit = total credit (sanity).
+Step 3: Profit & Loss
+1.	Income & Expense accounts only
+o	Income accounts → credit balance.
+o	Expense accounts → debit balance.
+2.	Output
+o	List all income
+o	List all expenses
+o	Net profit or loss for period.
+Step 4: Balance Sheet
+1.	Assets, Liabilities, Capital
+o	Assets = cash, bank, stock, debtors, etc.
+o	Liabilities = creditors, GST payable, etc.
+o	Capital = opening capital + retained earnings.
+2.	Check
+o	Assets = Liabilities + Capital.
+________________________________________
+PHASE 6 – Inventory Reports & Low Stock
+1.	Stock Report
+o	For each product:
+	Opening stock
+	Qty in
+	Qty out
+	Closing stock
+2.	Low-Stock Alerts
+o	Add reorder_level in product master.
+o	Report: products where current_stock <= reorder_level.
+3.	Inventory Valuation
+o	Simple method first: closing_stock * latest_purchase_rate or average purchase rate.
+________________________________________
+PHASE 7 – POS Module (Retail Billing)
+Do this only after normal sales invoice & inventory are stable.
+1.	POS Screen UI
+o	Big font, minimal clicks.
+o	Product search by:
+	Name / Code / Barcode.
+o	Item grid with:
+	Item name
+	Qty
+	Rate
+	Total line.
+o	Payment section:
+	Mode: cash / UPI / card
+	Received amount
+	Balance to return.
+2.	Backend
+o	POS bill = special type of Sales Invoice:
+	Same stock + accounting logic as sales invoice.
+o	Auto-invoice number but separate series (e.g., POS-0001).
+3.	Thermal Print Template (optional)
+o	Smaller width.
+o	Brief item details.
+o	Total, payment mode, time.
+________________________________________
+PHASE 8 – WhatsApp & Export
+Step 1: Sales Invoice WhatsApp Share
+1.	Generate PDF
+o	Use backend lib to output invoice PDF.
+2.	Expose link / file
+o	For web: generate URL, open system share or show QR.
+o	For desktop: open WhatsApp Web URL with pre-filled message and link.
+(Exact API usage depends on your stack and hosting; but architecturally, this is added after invoice and PDF are solid.)
+Step 2: Export Functions
+1.	Export to Excel/PDF
+o	For: Ledger, P&L, Balance Sheet, Stock report, Sales & Purchase registers.
+2.	Add buttons
+o	Export to Excel / Export to PDF on each report page.
+________________________________________
+PHASE 9 – Dashboard & Polish
+1.	Dashboard Widgets
+o	Today’s sales amount.
+o	Today’s number of invoices.
+o	Total outstanding from customers.
+o	Low-stock count.
+o	Top 5 selling items (last 30 days).
+2.	Search & Filters Everywhere
+o	On all list screens (invoices, products, vouchers).
+3.	User Permissions (if needed)
+o	Role: which modules they can view/add/edit/delete.
+________________________________________
+Implementation Order – Short Checklist
+Follow this exact order:
+1.	Project setup + Auth
+2.	Masters: Company, Customers, Suppliers, Products, Chart of Accounts
+3.	Stock ledger + Inventory base
+4.	Purchase Invoice → Purchase Return
+5.	Sales Invoice (with delivery address in print) → Sales Return
+6.	Payment & Receipt Vouchers
+7.	Journal Entries
+8.	Accounting ledger → Trial balance → P&L → Balance Sheet
+9.	Inventory reports + Low-stock
+10.	POS module
+11.	Invoice PDF + WhatsApp share
+12.	Exports (PDF/Excel)
+13.	Dashboard + role permissions + UI polish
+
