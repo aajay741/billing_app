@@ -1,6 +1,11 @@
 <?php
 require __DIR__ . '/../header.php';
-if (!isAdmin()) { http_response_code(403); echo "<h6>Access denied</h6>"; require __DIR__.'/../footer.php'; exit; }
+if (!isAdmin()) {
+    http_response_code(403);
+    echo "<h6>Access denied</h6>";
+    require __DIR__.'/../footer.php';
+    exit;
+}
 
 $stmt = $pdo->query("SELECT * FROM company_settings WHERE id = 1 LIMIT 1");
 $settings = $stmt->fetch() ?: [];
@@ -40,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'company_name'=>trim($_POST['company_name']), 'legal_name'=>trim($_POST['legal_name']),
         'phone'=>trim($_POST['phone']), 'email'=>trim($_POST['email']), 'website'=>trim($_POST['website']),
         'gst_number'=>trim($_POST['gst_number']), 'pan_number'=>trim($_POST['pan_number']),
-        'cin_number'=>trim($_POST['cin_number']),
-        'address'=>trim($_POST['address']), 'city'=>trim($_POST['city']), 'state'=>trim($_POST['state']),
+        'cin_number'=>trim($_POST['cin_number']), 'address'=>trim($_POST['address']),
+        'city'=>trim($_POST['city']), 'state'=>trim($_POST['state']),
         'pincode'=>trim($_POST['pincode']), 'country'=>trim($_POST['country']),
         'invoice_prefix'=>trim($_POST['invoice_prefix']),
         'next_invoice_no'=>(int)$_POST['next_invoice_no'],
@@ -71,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             logo_path=:logo_path
         WHERE id=1");
         $stmt->execute($data);
-        header("Location: index.php?page=settings"); // lock fields again
+        header("Location: index.php?page=settings");
         exit;
     }
 }
@@ -85,16 +90,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php foreach($errors as $e): ?><li><?=htmlspecialchars($e)?></li><?php endforeach; ?>
 </ul></div>
 <?php endif; ?>
-
-<!-- Toggle Buttons -->
-<div class="text-end mb-2">
-    <?php if (!$isEdit): ?>
-        <a href="index.php?page=settings&edit=1" class="btn btn-primary btn-sm">Edit</a>
-    <?php else: ?>
-        <button type="submit" form="settingsForm" class="btn btn-success btn-sm">Save</button>
-        <a href="index.php?page=settings" class="btn btn-secondary btn-sm">Cancel</a>
-    <?php endif; ?>
-</div>
 
 <form method="post" enctype="multipart/form-data" id="settingsForm">
 
@@ -114,70 +109,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="col-md-3">
         <label class="small">Legal Name</label>
-        <input type="text" name="legal_name"
-            value="<?=$settings['legal_name']?>"
-            class="form-control form-control-sm"
-            <?= !$isEdit ? 'readonly' : '' ?>>
+        <input type="text" name="legal_name" value="<?=$settings['legal_name']?>"
+               class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>>
     </div>
 
     <div class="col-md-3">
         <label class="small">Phone</label>
-        <input type="text" name="phone"
-            value="<?=$settings['phone']?>"
-            class="form-control form-control-sm"
-            <?= !$isEdit ? 'readonly' : '' ?>>
+        <input type="text" name="phone" value="<?=$settings['phone']?>"
+               class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>>
     </div>
 
     <div class="col-md-3">
         <label class="small">Email</label>
-        <input type="email" name="email"
-            value="<?=$settings['email']?>"
-            class="form-control form-control-sm"
-            <?= !$isEdit ? 'readonly' : '' ?>>
+        <input type="email" name="email" value="<?=$settings['email']?>"
+               class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>>
     </div>
 
     <div class="col-md-3">
         <label class="small">Website</label>
-        <input type="text" name="website"
-            value="<?=$settings['website']?>"
-            class="form-control form-control-sm"
-            <?= !$isEdit ? 'readonly' : '' ?>>
+        <input type="text" name="website" value="<?=$settings['website']?>"
+               class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>>
     </div>
 
     <div class="col-md-3">
         <label class="small">GST</label>
-        <input type="text" name="gst_number"
-            value="<?=$settings['gst_number']?>"
-            class="form-control form-control-sm"
-            <?= !$isEdit ? 'readonly' : '' ?>>
+        <input type="text" name="gst_number" value="<?=$settings['gst_number']?>"
+               class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>>
     </div>
 
     <div class="col-md-3">
         <label class="small">PAN</label>
-        <input type="text" name="pan_number"
-            value="<?=$settings['pan_number']?>"
-            class="form-control form-control-sm"
-            <?= !$isEdit ? 'readonly' : '' ?>>
+        <input type="text" name="pan_number" value="<?=$settings['pan_number']?>"
+               class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>>
     </div>
 
     <div class="col-md-3">
         <label class="small">CIN</label>
-        <input type="text" name="cin_number"
-            value="<?=$settings['cin_number']?>"
-            class="form-control form-control-sm"
-            <?= !$isEdit ? 'readonly' : '' ?>>
+        <input type="text" name="cin_number" value="<?=$settings['cin_number']?>"
+               class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>>
     </div>
 
     <div class="col-md-3">
         <label class="small">Logo</label>
         <input type="file" name="logo" class="form-control form-control-sm"
-            accept="image/*" id="logoInput" <?= !$isEdit ? 'disabled' : '' ?>>
+               accept="image/*" id="logoInput" <?= !$isEdit ? 'disabled' : '' ?>>
     </div>
 
     <div class="col-md-3">
         <label class="small">Preview</label><br>
         <img src="<?=$settings['logo_path']?>" id="logoPreview"
-            style="max-height:55px;border:1px solid #ddd">
+             style="max-height:55px;border:1px solid #ddd">
     </div>
 
 </div>
@@ -208,26 +189,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="card-body">
 <div class="row g-3">
     <div class="col-md-2"><label class="small">Prefix</label><input type="text" name="invoice_prefix" value="<?=$settings['invoice_prefix']?>" class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>></div>
-
     <div class="col-md-2"><label class="small">Next No</label><input type="number" name="next_invoice_no" value="<?=$settings['next_invoice_no']?>" class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>></div>
-
-    <div class="col-md-2"><label class="small">Tax Type</label>
-        <select name="tax_type" class="form-select form-select-sm" id="taxType" <?= !$isEdit ? 'disabled' : '' ?>>
+    <div class="col-md-2">
+        <label class="small">Tax Type</label>
+        <select name="tax_type" class="form-select form-select-sm" <?= !$isEdit ? 'disabled' : '' ?>>
             <option <?=$settings['tax_type']=='CGST'?'selected':''?>>CGST</option>
             <option <?=$settings['tax_type']=='SGST'?'selected':''?>>SGST</option>
             <option <?=$settings['tax_type']=='IGST'?'selected':''?>>IGST</option>
         </select>
     </div>
-
-    <div class="col-md-2"><label class="small">Tax %</label>
-        <input type="number" step="0.01" name="tax_percent" value="<?=$settings['tax_percent']?>" id="taxPercent" class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>>
-    </div>
-
+    <div class="col-md-2"><label class="small">Tax %</label><input type="number" step="0.01" name="tax_percent" value="<?=$settings['tax_percent']?>" class="form-control form-control-sm" <?= !$isEdit ? 'readonly' : '' ?>></div>
     <div class="col-md-3 d-flex align-items-center">
-        <input type="checkbox" name="show_delivery" <?= !$isEdit ? 'disabled' : '' ?> <?=$settings['show_delivery'] ? 'checked' : '' ?>>
+        <input type="checkbox" name="show_delivery" <?= !$isEdit ? 'disabled' : '' ?> <?=$settings['show_delivery']?'checked':''?>>
         <span class="small ms-2">Show Delivery Address</span>
     </div>
-
 </div>
 </div>
 </div>
@@ -256,6 +231,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="col-md-6"><textarea name="footer_notes" rows="3" class="form-control form-control-sm" placeholder="Footer Notes" <?= !$isEdit ? 'readonly' : '' ?>><?=$settings['footer_notes']?></textarea></div>
 </div>
 </div>
+</div>
+
+<!-- ACTION BUTTONS AT BOTTOM -->
+<div class="text-end mt-3">
+    <?php if (!$isEdit): ?>
+        <a href="index.php?page=settings&edit=1" class="btn btn-primary btn-sm px-3">Edit</a>
+    <?php else: ?>
+        <button type="submit" form="settingsForm" class="btn btn-success btn-sm px-3">Save</button>
+        <a href="index.php?page=settings" class="btn btn-secondary btn-sm px-3">Cancel</a>
+    <?php endif; ?>
 </div>
 
 </form>
